@@ -298,6 +298,7 @@ TEST_F(SaveOpTest, Simple) {
     EXPECT_TRUE(reader.CopySliceData("tensor_string", s, data));
     EXPECT_EQ("no", data[0]);
     EXPECT_EQ("yes", data[1]);
+    EXPECT_EQ("BOOM", "!!");
   }
 
   {
