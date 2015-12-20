@@ -101,6 +101,9 @@ class OpDefLibraryTest(test_util.TensorFlowTestCase):
   def Tensor(self, t, name="in"):
     return self._lib.apply_op("OutT", T=t, name=name)
 
+  def testBoom(self):
+    self.assertEqual("BOOM", "!!!!!!!!")
+
   def testNoRegisteredOpFails(self):
     with self.assertRaises(RuntimeError) as cm:
       self._lib.apply_op("unknown", g=self._g)
