@@ -56,6 +56,9 @@ function upsearch () {
 WORKSPACE="${WORKSPACE:-$(upsearch WORKSPACE)}"
 BUILD_TAG="${BUILD_TAG:-tf_ci}"
 
+# Determine the docker image name.
+CI_DOCKER_IMAGE_NAME="${CI_DOCKER_IMAGE_NAME:-${BUILD_TAG}.${CONTAINER_TYPE}}"
+
 
 # Add extra params for cuda devices and libraries for GPU container.
 if [ "${CONTAINER_TYPE}" == "gpu" ]; then
@@ -66,16 +69,6 @@ else
   GPU_EXTRA_PARAMS=""
 fi
 
-# Determine the docker image name
-DOCKER_IMG_NAME="${BUILD_TAG}.${CONTAINER_TYPE}"
-
-# Under Jenkins matrix build, the build tag may contain characters such as
-# commas (,) and equal signs (=), which are not valid inside docker image names.
-DOCKER_IMG_NAME=$(echo "${DOCKER_IMG_NAME}" | sed -e 's/=/_/g' -e 's/,/-/g')
-
-# Convert to all lower-case, as per requirement of Docker image names
-DOCKER_IMG_NAME=$(echo "${DOCKER_IMG_NAME}" | tr '[:upper:]' '[:lower:]')
-
 # Print arguments.
 echo "WORKSAPCE: ${WORKSPACE}"
 echo "CI_DOCKER_EXTRA_PARAMS: ${CI_DOCKER_EXTRA_PARAMS[@]}"
@@ -83,17 +76,17 @@ echo "COMMAND: ${COMMAND[@]}"
 echo "CI_COMMAND_PREFIX: ${CI_COMMAND_PREFIX[@]}"
 echo "CONTAINER_TYPE: ${CONTAINER_TYPE}"
 echo "BUILD_TAG: ${BUILD_TAG}"
-echo "  (docker container name will be ${DOCKER_IMG_NAME})"
+echo "  (docker container name will be ${CI_DOCKER_IMAGE_NAME})"
 echo ""
 
 
 # Build the docker container.
-echo "Building container (${DOCKER_IMG_NAME})..."
-docker build -t ${DOCKER_IMG_NAME} \
+echo "Building container (${CI_DOCKER_IMAGE_NAME})..."
+docker build -t ${CI_DOCKER_IMAGE_NAME} \
     -f ${SCRIPT_DIR}/Dockerfile.${CONTAINER_TYPE} ${SCRIPT_DIR}
 
 # Run the command inside the container.
-echo "Running '${COMMAND[@]}' inside ${DOCKER_IMG_NAME}..."
+echo "Running '${COMMAND[@]}' inside ${CI_DOCKER_IMAGE_NAME}..."
 mkdir -p ${WORKSPACE}/bazel-ci_build-cache
 docker run \
     -v ${WORKSPACE}/bazel-ci_build-cache:${WORKSPACE}/bazel-ci_build-cache \
@@ -106,6 +99,6 @@ docker run \
     -w /tensorflow \
     ${GPU_EXTRA_PARAMS} \
     ${CI_DOCKER_EXTRA_PARAMS[@]} \
-    "${DOCKER_IMG_NAME}" \
+    ${CI_DOCKER_IMAGE_NAME} \
     ${CI_COMMAND_PREFIX[@]} \
     ${COMMAND[@]}

@@ -281,6 +281,12 @@ if [[ ! -z "${TF_BUILD_DRY_RUN}" ]] && [[ ${TF_BUILD_DRY_RUN} != "0" ]]; then
 else
   # Actually run the command
   if [[ "${DO_DOCKER}" == "1" ]]; then
+    CI_DOCKER_IMAGE_NAME="${BUILD_TAG}.${CONTAINER_TYPE}"
+    # Under Jenkins matrix build, the build tag may contain characters such as
+    # commas (,) and equal signs (=), which are not valid inside docker image names.
+    CI_DOCKER_IMAGE_NAME=$(echo "${CI_DOCKER_IMAGE_NAME}" | sed -e 's/=/_/g' -e 's/,/-/g')
+    # Convert to all lower-case, as per requirement of Docker image names
+    export CI_DOCKER_IMAGE_NAME=$(echo "${CI_DOCKER_IMAGE_NAME}" | tr '[:upper:]' '[:lower:]')
     ${DOCKER_MAIN_CMD} ${CTYPE} /tmp/tf_build.sh
   else
     ${TMP_SCRIPT}
