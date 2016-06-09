@@ -55,6 +55,7 @@ source cuda.config || exit -1
 OUTPUTDIR=${OUTPUTDIR:-../../..}
 CUDA_TOOLKIT_PATH=${CUDA_TOOLKIT_PATH:-/usr/local/cuda}
 CUDNN_INSTALL_BASEDIR=${CUDNN_INSTALL_PATH:-/usr/local/cuda}
+NVIDIA_TOOLKIT_PATH=${NVIDIA_TOOLKIT_PATH:-/usr/local/nvidia}
 
 if [[ -z "$TF_CUDA_VERSION" ]]; then
   TF_CUDA_EXT=""
@@ -228,6 +229,8 @@ echo "Setting up CUPTI include"
 LinkAllFiles ${CUDA_TOOLKIT_PATH}/extras/CUPTI/include $OUTPUTDIR/third_party/gpus/cuda/extras/CUPTI/include || exit -1
 echo "Setting up CUPTI lib64"
 LinkAllFiles ${CUDA_TOOLKIT_PATH}/${CUDA_CUPTI_LIB_DIR} $OUTPUTDIR/third_party/gpus/cuda/${CUDA_CUPTI_LIB_DIR} || exit -1
+echo "Setting up NVidia Toolkidlib64 (libcuda.so*)"
+LinkAllFiles ${NVIDIA_TOOLKIT_PATH}/${CUDA_LIB_PATH} $OUTPUTDIR/third_party/gpus/cuda/${CUDA_LIB_PATH} || exit -1
 
 # Set up symbolic link for cudnn
 ln -sf $CUDNN_HEADER_DIR/cudnn.h $OUTPUTDIR/third_party/gpus/cuda/include/cudnn.h || exit -1

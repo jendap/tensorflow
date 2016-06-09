@@ -40,7 +40,7 @@ COMMAND=("$@")
 
 export CI_BUILD_PYTHON="${CI_BUILD_PYTHON:-python}"
 export PYTHON_BIN_PATH="${PYTHON_BIN_PATH:-$(which ${CI_BUILD_PYTHON})}"
-if [ "${CONTAINER_TYPE}" == "gpu" ]; then
+if [[ "${CONTAINER_TYPE}" =~ gpu ]]; then
   export TF_NEED_CUDA=1
 else
   export TF_NEED_CUDA=0

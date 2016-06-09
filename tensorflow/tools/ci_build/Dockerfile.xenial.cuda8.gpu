@@ -1,0 +1,31 @@
+FROM nvidia/cuda:8.0-cudnn5-devel-ubuntu16.04
+
+MAINTAINER Jan Prach <jendap@google.com>
+
+# Copy and run the install scripts.
+#COPY install/*.sh /install/
+COPY install/install_bootstrap_deb_packages.sh /install/
+RUN /install/install_bootstrap_deb_packages.sh
+COPY install/install_deb_packages.sh /install/
+RUN /install/install_deb_packages.sh
+COPY install/install_python_packages_xenial.sh /install/
+RUN /install/install_python_packages_xenial.sh
+COPY install/install_bazel.sh /install/
+RUN /install/install_bazel.sh
+
+# Set up bazelrc.
+COPY install/.bazelrc /root/.bazelrc
+ENV BAZELRC /root/.bazelrc
+
+# Set up environment variables
+ENV PATH /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/cuda/bin:/usr/local/nvidia/bin
+ENV LD_LIBRARY_PATH /usr/local/cuda/lib64:/usr/local/cuda/extras/CUPTI/lib64:/usr/local/nvidia/lib64
+
+# Configure the build for our CUDA configuration.
+#ENV CUDA_TOOLKIT_PATH /usr/local/cuda
+#ENV CUDNN_INSTALL_PATH /usr/local/cuda
+#ENV NVIDIA_TOOLKIT_PATH=/usr/local/nvidia
+ENV TF_NEED_CUDA 1
+
+# workaround wrong version check - https://github.com/NVIDIA/nvidia-docker/issues/167
+RUN sed -i -e 's/__GNUC_MINOR__ > [0-9]/__GNUC_MINOR__ > 666/g' /usr/local/cuda/include/host_config.h

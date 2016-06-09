@@ -93,16 +93,14 @@ BUILD_TAG="${BUILD_TAG:-tf_ci}"
 
 
 # Add extra params for cuda devices and libraries for GPU container.
-if [ "${CONTAINER_TYPE}" == "gpu" ]; then
-  devices=$(\ls /dev/nvidia* | xargs -I{} echo '--device {}:{}')
-  libs=$(\ls /usr/lib/x86_64-linux-gnu/libcuda.* | xargs -I{} echo '-v {}:{}')
-  GPU_EXTRA_PARAMS="${devices} ${libs}"
+if [[ "${CONTAINER_TYPE}" =~ gpu ]]; then
+  DOCKER_COMMAND="nvidia-docker"
 
-  # GPU pip tests-on-install should avoid using concurrent jobs due to GPU
-  # resource contention
-  GPU_EXTRA_PARAMS="${GPU_EXTRA_PARAMS} -e TF_BUILD_SERIAL_INSTALL_TESTS=1"
+  # test_installation.sh gpu build has to run one test at a time to avoid
+  # resource contention (each test tries to allocate all gpu memory).
+  CI_DOCKER_EXTRA_PARAMS="${CI_DOCKER_EXTRA_PARAMS} -e TF_BUILD_SERIAL_INSTALL_TESTS=1"
 else
-  GPU_EXTRA_PARAMS=""
+  DOCKER_COMMAND="docker"
 fi
 
 # Determine the docker image name
@@ -142,7 +140,7 @@ mkdir -p ${WORKSPACE}/bazel-ci_build-cache
 # By default we cleanup - remove the container once it finish running (--rm)
 # and share the PID namespace (--pid=host) so the process inside does not have
 # pid 1 and SIGKILL is propagated to the process inside (jenkins can kill it).
-docker run --rm --pid=host \
+${DOCKER_COMMAND:-docker} run --rm --pid=host \
     -v ${WORKSPACE}/bazel-ci_build-cache:${WORKSPACE}/bazel-ci_build-cache \
     -e "CI_BUILD_HOME=${WORKSPACE}/bazel-ci_build-cache" \
     -e "CI_BUILD_USER=$(id -u --name)" \
@@ -152,7 +150,6 @@ docker run --rm --pid=host \
     -e "CI_TENSORFLOW_SUBMODULE_PATH=${CI_TENSORFLOW_SUBMODULE_PATH}" \
     -v ${WORKSPACE}:/workspace \
     -w /workspace \
-    ${GPU_EXTRA_PARAMS} \
     ${CI_DOCKER_EXTRA_PARAMS[@]} \
     "${DOCKER_IMG_NAME}" \
     ${CI_COMMAND_PREFIX[@]} \
